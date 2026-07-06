@@ -62,8 +62,8 @@ export function CategoryPreferences() {
     <div className="space-y-5">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-normal text-zinc-950">订阅新闻类型</h1>
-          <p className="mt-1 text-sm text-zinc-500">当前：{summary}</p>
+          <h1 className="text-2xl font-semibold tracking-normal text-zinc-950 dark:text-zinc-50">订阅新闻类型</h1>
+          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">当前：{summary}</p>
         </div>
         <Button variant="outline" size="sm" onClick={() => setStoredCategories(DEFAULT_CATEGORIES)}>
           全选
@@ -83,7 +83,9 @@ export function CategoryPreferences() {
               }
               className={cn(
                 "flex h-16 items-center justify-between rounded-lg border px-4 text-left text-base font-medium transition",
-                active ? "border-zinc-950 bg-zinc-950 text-white" : "border-zinc-200 bg-white text-zinc-800",
+                active
+                  ? "border-zinc-950 bg-zinc-950 text-white dark:border-zinc-50 dark:bg-zinc-50 dark:text-zinc-950"
+                  : "border-zinc-200 bg-white text-zinc-800 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200",
               )}
             >
               {category}

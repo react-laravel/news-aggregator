@@ -1,8 +1,15 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #fafafa;
   --foreground: #18181b;
+}
+
+.dark {
+  --background: #09090b;
+  --foreground: #fafafa;
 }
 
 @theme inline {
@@ -39,4 +46,3 @@ a {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-

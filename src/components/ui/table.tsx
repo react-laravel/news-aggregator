@@ -6,10 +6,9 @@ export function Table({ className, ...props }: React.TableHTMLAttributes<HTMLTab
 }
 
 export function Th({ className, ...props }: React.ThHTMLAttributes<HTMLTableCellElement>) {
-  return <th className={cn("h-11 px-3 text-left align-middle font-medium text-zinc-500", className)} {...props} />;
+  return <th className={cn("h-11 px-3 text-left align-middle font-medium text-zinc-500 dark:text-zinc-400", className)} {...props} />;
 }
 
 export function Td({ className, ...props }: React.TdHTMLAttributes<HTMLTableCellElement>) {
-  return <td className={cn("border-t border-zinc-100 px-3 py-3 align-middle", className)} {...props} />;
+  return <td className={cn("border-t border-zinc-100 px-3 py-3 align-middle dark:border-zinc-800", className)} {...props} />;
 }
-

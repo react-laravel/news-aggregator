@@ -31,7 +31,7 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ id:
   if (!article) notFound();
 
   return (
-    <main className="min-h-screen bg-zinc-50 pb-24">
+    <main className="min-h-screen bg-zinc-50 pb-24 dark:bg-zinc-950">
       <div className="mx-auto max-w-3xl px-4 py-5">
         <Button variant="ghost" size="sm" asChild>
           <Link href="/">
@@ -48,11 +48,11 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ id:
           <div className="space-y-3">
             <div className="flex flex-wrap items-center gap-2">
               <Badge>{article.category}</Badge>
-              <span className="text-sm text-zinc-500">{article.sourceName || article.source.name}</span>
-              <span className="text-sm text-zinc-400">{formatDateTime(article.publishedAt ?? article.createdAt)}</span>
+              <span className="text-sm text-zinc-500 dark:text-zinc-400">{article.sourceName || article.source.name}</span>
+              <span className="text-sm text-zinc-400 dark:text-zinc-500">{formatDateTime(article.publishedAt ?? article.createdAt)}</span>
             </div>
-            <h1 className="text-3xl font-semibold leading-tight tracking-normal text-zinc-950">{article.titleZh}</h1>
-            <p className="text-base leading-8 text-zinc-700">{article.summaryZh || article.summaryOriginal || "暂无摘要"}</p>
+            <h1 className="text-3xl font-semibold leading-tight tracking-normal text-zinc-950 dark:text-zinc-50">{article.titleZh}</h1>
+            <p className="text-base leading-8 text-zinc-700 dark:text-zinc-300">{article.summaryZh || article.summaryOriginal || "暂无摘要"}</p>
             <Button asChild>
               <a href={article.url} target="_blank" rel="noreferrer">
                 阅读原文
@@ -69,8 +69,8 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ id:
               {article.cluster.articles.map((item) => (
                 <Card key={item.id} className="p-3">
                   <a href={item.url} target="_blank" rel="noreferrer" className="block">
-                    <div className="text-sm font-medium text-zinc-950">{item.titleZh}</div>
-                    <div className="mt-1 text-xs text-zinc-500">
+                    <div className="text-sm font-medium text-zinc-950 dark:text-zinc-50">{item.titleZh}</div>
+                    <div className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
                       {item.sourceName || item.source.name} · {formatDateTime(item.publishedAt ?? item.createdAt)}
                     </div>
                   </a>
@@ -84,4 +84,3 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ id:
     </main>
   );
 }
-

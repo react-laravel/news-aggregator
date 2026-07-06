@@ -5,9 +5,10 @@ import { NewsCard } from "@/components/site/news-card";
 import { NewsFeedFilter } from "@/components/site/news-feed-filter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ThemeToggle } from "@/components/site/theme-toggle";
 import { NEWS_CATEGORIES, DEFAULT_PAGE_SIZE } from "@/lib/constants";
 import { prisma } from "@/lib/db";
-import { clampPage } from "@/lib/utils";
+import { clampPage, formatDateTime, formatRelativeTime } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -34,7 +35,7 @@ export default async function Home({ searchParams }: HomeProps) {
       : {}),
   };
 
-  const [articles, total] = await Promise.all([
+  const [articles, total, latestArticle] = await Promise.all([
     prisma.article.findMany({
       where,
       include: { source: true, cluster: true },
@@ -43,24 +44,25 @@ export default async function Home({ searchParams }: HomeProps) {
       skip: (page - 1) * DEFAULT_PAGE_SIZE,
     }),
     prisma.article.count({ where }),
+    prisma.article.findFirst({
+      orderBy: { createdAt: "desc" },
+      select: { createdAt: true },
+    }),
   ]);
   const pageCount = Math.max(1, Math.ceil(total / DEFAULT_PAGE_SIZE));
 
   return (
-    <main className="min-h-screen bg-zinc-50 pb-24">
+    <main className="min-h-screen bg-zinc-50 pb-24 dark:bg-zinc-950">
       <div className="mx-auto max-w-5xl px-4 py-5 sm:px-6 md:py-8">
-        <header className="mb-5 space-y-4">
-          <div>
-            <p className="text-sm font-medium text-zinc-500">聚合新闻</p>
-            <h1 className="mt-1 text-3xl font-semibold tracking-normal text-zinc-950">今日要闻</h1>
-          </div>
+        <header className="mb-5 space-y-3">
           <form className="flex gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-400" />
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-400 dark:text-zinc-500" />
               <Input name="q" defaultValue={q} className="pl-9" placeholder="搜索新闻、来源或关键词" />
             </div>
             {category ? <input type="hidden" name="category" value={category} /> : null}
             <Button type="submit">搜索</Button>
+            <ThemeToggle />
           </form>
           <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <Button variant={!category ? "default" : "outline"} size="sm" className="min-w-14 shrink-0 px-4" asChild>
@@ -71,6 +73,10 @@ export default async function Home({ searchParams }: HomeProps) {
                 <Link href={`/?category=${encodeURIComponent(item)}${q ? `&q=${encodeURIComponent(q)}` : ""}`}>{item}</Link>
               </Button>
             ))}
+          </div>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-zinc-500 dark:text-zinc-400">
+            <span>最后更新：{formatRelativeTime(latestArticle?.createdAt)}</span>
+            {latestArticle?.createdAt ? <span>{formatDateTime(latestArticle.createdAt)}</span> : null}
           </div>
         </header>
 
@@ -83,12 +89,12 @@ export default async function Home({ searchParams }: HomeProps) {
             ))}
           </div>
         ) : (
-          <div className="rounded-lg border border-dashed border-zinc-300 bg-white p-8 text-center text-zinc-500">
+          <div className="rounded-lg border border-dashed border-zinc-300 bg-white p-8 text-center text-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400">
             暂无新闻。请先在后台配置数据源并运行采集任务。
           </div>
         )}
 
-        <div className="mt-6 flex items-center justify-between text-sm text-zinc-500">
+        <div className="mt-6 flex items-center justify-between text-sm text-zinc-500 dark:text-zinc-400">
           <span>
             第 {page} / {pageCount} 页，共 {total} 条
           </span>

@@ -24,8 +24,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh-CN" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="min-h-full bg-zinc-50 text-zinc-950">{children}</body>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{var t=localStorage.getItem('news_theme')==='dark'?'dark':'light';document.documentElement.classList.toggle('dark',t==='dark');document.documentElement.style.colorScheme=t}catch(e){}",
+          }}
+        />
+      </head>
+      <body className="min-h-full bg-zinc-50 text-zinc-950 dark:bg-zinc-950 dark:text-zinc-50">{children}</body>
     </html>
   );
 }
-
