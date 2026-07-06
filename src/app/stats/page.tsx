@@ -1,6 +1,7 @@
 import { BottomNav } from "@/components/site/bottom-nav";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { StatsChart } from "@/components/site/stats-chart";
 import { prisma } from "@/lib/db";
 import { formatDateTime, formatRelativeTime } from "@/lib/utils";
 
@@ -81,8 +82,14 @@ export default async function StatsPage() {
 
   const hourlyCounts = toCountMap(hourRows);
   const dailyCounts = toCountMap(dayRows);
-  const maxHour = Math.max(1, ...hourlyBuckets.map((bucket) => hourlyCounts.get(bucket.toISOString()) ?? 0));
-  const maxDay = Math.max(1, ...dailyBuckets.map((bucket) => dailyCounts.get(bucket.toISOString()) ?? 0));
+  const hourlyData = hourlyBuckets.map((bucket) => ({
+    label: formatHour(bucket),
+    value: hourlyCounts.get(bucket.toISOString()) ?? 0,
+  }));
+  const dailyData = dailyBuckets.map((bucket) => ({
+    label: formatDay(bucket),
+    value: dailyCounts.get(bucket.toISOString()) ?? 0,
+  }));
 
   return (
     <main className="min-h-screen bg-zinc-50 pb-24 dark:bg-zinc-950">
@@ -102,19 +109,8 @@ export default async function StatsPage() {
           <CardHeader>
             <CardTitle>最近 24 小时</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
-            {hourlyBuckets.map((bucket) => {
-              const count = hourlyCounts.get(bucket.toISOString()) ?? 0;
-              return (
-                <div key={bucket.toISOString()} className="grid grid-cols-[52px_1fr_42px] items-center gap-3 text-sm">
-                  <span className="text-zinc-500 dark:text-zinc-400">{formatHour(bucket)}</span>
-                  <div className="h-2 rounded-full bg-zinc-100 dark:bg-zinc-800">
-                    <div className="h-2 rounded-full bg-zinc-950 dark:bg-zinc-50" style={{ width: `${Math.max(3, (count / maxHour) * 100)}%` }} />
-                  </div>
-                  <span className="text-right font-medium text-zinc-950 dark:text-zinc-50">{count}</span>
-                </div>
-              );
-            })}
+          <CardContent>
+            <StatsChart title="每小时更新量" data={hourlyData} />
           </CardContent>
         </Card>
 
@@ -122,19 +118,8 @@ export default async function StatsPage() {
           <CardHeader>
             <CardTitle>最近 7 天</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
-            {dailyBuckets.map((bucket) => {
-              const count = dailyCounts.get(bucket.toISOString()) ?? 0;
-              return (
-                <div key={bucket.toISOString()} className="grid grid-cols-[86px_1fr_42px] items-center gap-3 text-sm">
-                  <span className="text-zinc-500 dark:text-zinc-400">{formatDay(bucket)}</span>
-                  <div className="h-2 rounded-full bg-zinc-100 dark:bg-zinc-800">
-                    <div className="h-2 rounded-full bg-zinc-950 dark:bg-zinc-50" style={{ width: `${Math.max(3, (count / maxDay) * 100)}%` }} />
-                  </div>
-                  <span className="text-right font-medium text-zinc-950 dark:text-zinc-50">{count}</span>
-                </div>
-              );
-            })}
+          <CardContent>
+            <StatsChart title="每天更新量" data={dailyData} className="h-64" />
           </CardContent>
         </Card>
       </div>
