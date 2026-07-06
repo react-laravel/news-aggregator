@@ -32,10 +32,12 @@ function subscribeTheme(callback: () => void) {
 export function StatsChart({
   title,
   data,
+  xAxisInterval,
   className,
 }: {
   title: string;
   data: ChartPoint[];
+  xAxisInterval?: number;
   className?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -64,7 +66,7 @@ export function StatsChart({
         left: 8,
         right: 8,
         top: 14,
-        bottom: 28,
+        bottom: 42,
         containLabel: true,
       },
       tooltip: {
@@ -83,7 +85,8 @@ export function StatsChart({
         axisLabel: {
           color: dark ? "#a1a1aa" : "#71717a",
           fontSize: 11,
-          interval: data.length > 12 ? 2 : 0,
+          interval: xAxisInterval ?? (data.length > 12 ? 3 : 0),
+          hideOverlap: true,
         },
       },
       yAxis: {
@@ -106,7 +109,7 @@ export function StatsChart({
       ],
     };
     chartRef.current.setOption(option, true);
-  }, [data, theme, title]);
+  }, [data, theme, title, xAxisInterval]);
 
   return <div ref={ref} className={cn("h-72 w-full", className)} aria-label={title} />;
 }
