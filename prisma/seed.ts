@@ -1,6 +1,9 @@
+import "dotenv/config";
 import { PrismaClient, SourceType } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 
-const prisma = new PrismaClient();
+const adapter = new PrismaPg(process.env.DATABASE_URL ?? "postgresql://news:***@127.0.0.1:5432/news_aggregator");
+const prisma = new PrismaClient({ adapter });
 
 const categories = ["国内", "国际", "财经", "科技", "AI", "体育", "娱乐", "健康", "汽车"];
 
@@ -9,7 +12,7 @@ async function main() {
     name: string;
     type: SourceType;
     priority: number;
-    query?: string;
+    query?: string | null;
     baseUrl?: string;
     categoryKeys: string[];
   }> = [
@@ -17,7 +20,7 @@ async function main() {
       name: "Brave 新闻搜索",
       type: "brave_news",
       priority: 10,
-      query: categories.join(" OR "),
+      query: null,
       categoryKeys: categories,
     },
     {
