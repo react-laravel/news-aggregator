@@ -23,8 +23,7 @@ export function JobRunner() {
         <Play size={16} />
         {running ? "采集中" : "手动采集"}
       </Button>
-      {message ? <span className="text-sm text-zinc-500">{message}</span> : null}
+      {message ? <span className="text-sm text-zinc-500 dark:text-zinc-400">{message}</span> : null}
     </div>
   );
 }
-

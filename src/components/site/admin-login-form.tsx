@@ -32,11 +32,10 @@ export function AdminLoginForm() {
   return (
     <form onSubmit={submit} className="space-y-4">
       <Input value={token} onChange={(event) => setToken(event.target.value)} placeholder="ADMIN_TOKEN" type="password" />
-      {error ? <p className="text-sm text-red-600">{error}</p> : null}
+      {error ? <p className="text-sm text-red-600 dark:text-red-400">{error}</p> : null}
       <Button className="w-full" type="submit" disabled={loading}>
         {loading ? "验证中" : "进入后台"}
       </Button>
     </form>
   );
 }
-

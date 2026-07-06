@@ -12,15 +12,15 @@ export default async function AdminSourcesPage() {
   const sources = await prisma.dataSource.findMany({ orderBy: { priority: "asc" } });
 
   return (
-    <main className="min-h-screen bg-zinc-50">
+    <main className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
       <AdminNav />
       <div className="mx-auto max-w-6xl space-y-4 px-4 py-5">
         <div>
-          <h1 className="text-2xl font-semibold tracking-normal">数据源</h1>
-          <p className="mt-1 text-sm text-zinc-500">优先级数字越小越优先，聚合同事件新闻时用于选择展示文章。</p>
+          <h1 className="text-2xl font-semibold tracking-normal text-zinc-950 dark:text-zinc-50">数据源</h1>
+          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">优先级数字越小越优先，聚合同事件新闻时用于选择展示文章。</p>
         </div>
         <SourceCreateForm />
-        <div className="overflow-x-auto rounded-lg border border-zinc-200 bg-white">
+        <div className="overflow-x-auto rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
           <Table>
             <thead>
               <tr>

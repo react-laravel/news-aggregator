@@ -28,8 +28,8 @@ export function SourceRow({ source }: { source: DataSource }) {
   return (
     <tr>
       <Td>
-        <div className="font-medium text-zinc-950">{source.name}</div>
-        <div className="text-xs text-zinc-500">{source.baseUrl || source.query || "未设置查询"}</div>
+        <div className="font-medium text-zinc-950 dark:text-zinc-50">{source.name}</div>
+        <div className="text-xs text-zinc-500 dark:text-zinc-400">{source.baseUrl || source.query || "未设置查询"}</div>
       </Td>
       <Td>{source.type}</Td>
       <Td>
@@ -91,7 +91,7 @@ export function SourceCreateForm() {
   }
 
   return (
-    <form onSubmit={submit} className="grid gap-3 rounded-lg border border-zinc-200 bg-white p-4 md:grid-cols-6">
+    <form onSubmit={submit} className="grid gap-3 rounded-lg border border-zinc-200 bg-white p-4 md:grid-cols-6 dark:border-zinc-800 dark:bg-zinc-900">
       <Input name="name" placeholder="名称" required />
       <Select name="type" defaultValue="crawler">
         <option value="crawler">crawler</option>
@@ -107,7 +107,7 @@ export function SourceCreateForm() {
         <Button type="submit" disabled={saving}>
           {saving ? "创建中" : "新增数据源"}
         </Button>
-        {message ? <span className="text-sm text-red-600">{message}</span> : null}
+        {message ? <span className="text-sm text-red-600 dark:text-red-400">{message}</span> : null}
       </div>
     </form>
   );

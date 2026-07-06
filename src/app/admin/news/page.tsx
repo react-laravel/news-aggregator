@@ -47,10 +47,10 @@ export default async function AdminNewsPage({ searchParams }: { searchParams: Pr
   const pageCount = Math.max(1, Math.ceil(total / DEFAULT_PAGE_SIZE));
 
   return (
-    <main className="min-h-screen bg-zinc-50">
+    <main className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
       <AdminNav />
       <div className="mx-auto max-w-6xl space-y-4 px-4 py-5">
-        <form className="grid gap-2 rounded-lg border border-zinc-200 bg-white p-3 md:grid-cols-[1fr_160px_180px_auto]">
+        <form className="grid gap-2 rounded-lg border border-zinc-200 bg-white p-3 md:grid-cols-[1fr_160px_180px_auto] dark:border-zinc-800 dark:bg-zinc-900">
           <Input name="q" defaultValue={q} placeholder="搜索标题、摘要、来源" />
           <Select name="category" defaultValue={category ?? ""}>
             <option value="">全部分类</option>
@@ -71,7 +71,7 @@ export default async function AdminNewsPage({ searchParams }: { searchParams: Pr
           <Button type="submit">筛选</Button>
         </form>
 
-        <div className="overflow-x-auto rounded-lg border border-zinc-200 bg-white">
+        <div className="overflow-x-auto rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
           <Table>
             <thead>
               <tr>
@@ -86,22 +86,22 @@ export default async function AdminNewsPage({ searchParams }: { searchParams: Pr
               {articles.map((article) => (
                 <tr key={article.id}>
                   <Td className="min-w-80">
-                    <Link href={`/news/${article.id}`} className="font-medium text-zinc-950 hover:underline">
+                    <Link href={`/news/${article.id}`} className="font-medium text-zinc-950 hover:underline dark:text-zinc-50">
                       {article.titleZh}
                     </Link>
-                    <div className="mt-1 line-clamp-2 text-xs text-zinc-500">{article.summaryZh || article.summaryOriginal}</div>
+                    <div className="mt-1 line-clamp-2 text-xs text-zinc-500 dark:text-zinc-400">{article.summaryZh || article.summaryOriginal}</div>
                   </Td>
                   <Td>{article.category}</Td>
                   <Td>{article.sourceName || article.source.name}</Td>
                   <Td>{formatDateTime(article.publishedAt ?? article.createdAt)}</Td>
-                  <Td>{article.canonicalFor ? <Badge>展示中</Badge> : <span className="text-zinc-400">聚合隐藏</span>}</Td>
+                  <Td>{article.canonicalFor ? <Badge>展示中</Badge> : <span className="text-zinc-400 dark:text-zinc-500">聚合隐藏</span>}</Td>
                 </tr>
               ))}
             </tbody>
           </Table>
         </div>
 
-        <div className="flex items-center justify-between text-sm text-zinc-500">
+        <div className="flex items-center justify-between text-sm text-zinc-500 dark:text-zinc-400">
           <span>
             第 {page} / {pageCount} 页，共 {total} 条
           </span>
@@ -118,4 +118,3 @@ export default async function AdminNewsPage({ searchParams }: { searchParams: Pr
     </main>
   );
 }
-

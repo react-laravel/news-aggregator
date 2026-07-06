@@ -14,17 +14,17 @@ export default async function AdminJobsPage() {
   const jobs = await prisma.ingestJob.findMany({ orderBy: { startedAt: "desc" }, take: 30 });
 
   return (
-    <main className="min-h-screen bg-zinc-50">
+    <main className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
       <AdminNav />
       <div className="mx-auto max-w-6xl space-y-4 px-4 py-5">
         <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
           <div>
-            <h1 className="text-2xl font-semibold tracking-normal">采集任务</h1>
-            <p className="mt-1 text-sm text-zinc-500">Linux 部署后建议用 systemd timer 每小时运行 `npm run ingest:news`。</p>
+            <h1 className="text-2xl font-semibold tracking-normal text-zinc-950 dark:text-zinc-50">采集任务</h1>
+            <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">Linux 部署后建议用 systemd timer 每小时运行 `npm run ingest:news`。</p>
           </div>
           <JobRunner />
         </div>
-        <div className="overflow-x-auto rounded-lg border border-zinc-200 bg-white">
+        <div className="overflow-x-auto rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
           <Table>
             <thead>
               <tr>
@@ -41,14 +41,14 @@ export default async function AdminJobsPage() {
               {jobs.map((job) => (
                 <tr key={job.id}>
                   <Td>
-                    <Badge className={job.status === "failed" ? "bg-red-50 text-red-700" : ""}>{job.status}</Badge>
+                    <Badge className={job.status === "failed" ? "bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300" : ""}>{job.status}</Badge>
                   </Td>
                   <Td>{formatDateTime(job.startedAt)}</Td>
                   <Td>{job.sourcesChecked}</Td>
                   <Td>{job.articlesFound}</Td>
                   <Td>{job.articlesSaved}</Td>
                   <Td>{job.clustersTouched}</Td>
-                  <Td className="max-w-sm truncate text-red-600">{job.error}</Td>
+                  <Td className="max-w-sm truncate text-red-600 dark:text-red-400">{job.error}</Td>
                 </tr>
               ))}
             </tbody>
@@ -58,4 +58,3 @@ export default async function AdminJobsPage() {
     </main>
   );
 }
-
