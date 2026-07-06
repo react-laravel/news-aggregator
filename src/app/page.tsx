@@ -50,14 +50,9 @@ export default async function Home({ searchParams }: HomeProps) {
     <main className="min-h-screen bg-zinc-50 pb-24">
       <div className="mx-auto max-w-5xl px-4 py-5 sm:px-6 md:py-8">
         <header className="mb-5 space-y-4">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-sm font-medium text-zinc-500">聚合新闻</p>
-              <h1 className="mt-1 text-3xl font-semibold tracking-normal text-zinc-950">今日要闻</h1>
-            </div>
-            <Button variant="outline" size="sm" asChild>
-              <Link href="/admin/news">后台</Link>
-            </Button>
+          <div>
+            <p className="text-sm font-medium text-zinc-500">聚合新闻</p>
+            <h1 className="mt-1 text-3xl font-semibold tracking-normal text-zinc-950">今日要闻</h1>
           </div>
           <form className="flex gap-2">
             <div className="relative flex-1">
@@ -67,12 +62,12 @@ export default async function Home({ searchParams }: HomeProps) {
             {category ? <input type="hidden" name="category" value={category} /> : null}
             <Button type="submit">搜索</Button>
           </form>
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            <Button variant={!category ? "default" : "outline"} size="sm" asChild>
+          <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <Button variant={!category ? "default" : "outline"} size="sm" className="min-w-14 shrink-0 px-4" asChild>
               <Link href={q ? `/?q=${encodeURIComponent(q)}` : "/"}>全部</Link>
             </Button>
             {NEWS_CATEGORIES.map((item) => (
-              <Button key={item} variant={category === item ? "default" : "outline"} size="sm" asChild>
+              <Button key={item} variant={category === item ? "default" : "outline"} size="sm" className="min-w-14 shrink-0 px-4" asChild>
                 <Link href={`/?category=${encodeURIComponent(item)}${q ? `&q=${encodeURIComponent(q)}` : ""}`}>{item}</Link>
               </Button>
             ))}
@@ -111,4 +106,3 @@ export default async function Home({ searchParams }: HomeProps) {
     </main>
   );
 }
-
