@@ -11,9 +11,12 @@ import { NEWS_CATEGORIES } from "@/lib/constants";
 import { formatDateTime } from "@/lib/utils";
 
 export function SourceCard({ source }: { source: DataSource }) {
+  const router = useRouter();
   const [enabled, setEnabled] = useState(source.enabled);
   const [priority, setPriority] = useState(String(source.priority));
   const [saving, setSaving] = useState(false);
+  const [ingesting, setIngesting] = useState(false);
+  const [message, setMessage] = useState("");
 
   async function save(nextEnabled = enabled) {
     setSaving(true);
@@ -25,26 +28,40 @@ export function SourceCard({ source }: { source: DataSource }) {
     setSaving(false);
   }
 
+  async function ingest() {
+    setIngesting(true);
+    setMessage("");
+    const response = await fetch(`/api/admin/sources/${source.id}/ingest`, { method: "POST" });
+    const data = (await response.json().catch(() => ({}))) as { articlesFound?: number; articlesSaved?: number; error?: string };
+    setIngesting(false);
+    if (!response.ok) {
+      setMessage(data.error || "采集失败");
+      return;
+    }
+    setMessage(`发现 ${data.articlesFound ?? 0} 条，保存 ${data.articlesSaved ?? 0} 条`);
+    router.refresh();
+  }
+
   return (
-    <section className="space-y-4 rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+    <section className="min-w-0 space-y-4 rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h2 className="truncate text-base font-semibold text-zinc-950 dark:text-zinc-50">{source.name}</h2>
-          <p className="mt-1 truncate text-xs text-zinc-500 dark:text-zinc-400">{source.baseUrl || source.query || "未设置查询"}</p>
+          <p className="mt-1 break-all text-xs text-zinc-500 dark:text-zinc-400">{source.baseUrl || source.query || "未设置查询"}</p>
         </div>
         <span className="shrink-0 rounded-md bg-zinc-100 px-2 py-1 text-xs font-medium text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
           {source.type}
         </span>
       </div>
 
-      <dl className="grid grid-cols-2 gap-3 text-sm">
-        <div>
+      <dl className="grid min-w-0 grid-cols-2 gap-3 text-sm">
+        <div className="min-w-0">
           <dt className="text-xs text-zinc-500 dark:text-zinc-400">优先级</dt>
           <dd className="mt-1">
             <Input className="h-9 w-full" value={priority} onChange={(event) => setPriority(event.target.value)} inputMode="numeric" />
           </dd>
         </div>
-        <div>
+        <div className="min-w-0">
           <dt className="text-xs text-zinc-500 dark:text-zinc-400">启用</dt>
           <dd className="mt-2">
             <Switch
@@ -56,25 +73,31 @@ export function SourceCard({ source }: { source: DataSource }) {
             />
           </dd>
         </div>
-        <div className="col-span-2">
+        <div className="col-span-2 min-w-0">
           <dt className="text-xs text-zinc-500 dark:text-zinc-400">分类</dt>
           <dd className="mt-1 break-words text-zinc-800 dark:text-zinc-200">{source.categoryKeys.join("、") || "全部"}</dd>
         </div>
-        <div>
+        <div className="min-w-0">
           <dt className="text-xs text-zinc-500 dark:text-zinc-400">最近状态</dt>
-          <dd className="mt-1 text-zinc-800 dark:text-zinc-200">{source.lastStatus || "未运行"}</dd>
+          <dd className="mt-1 break-words text-zinc-800 dark:text-zinc-200">{source.lastStatus || "未运行"}</dd>
         </div>
-        <div>
+        <div className="min-w-0">
           <dt className="text-xs text-zinc-500 dark:text-zinc-400">最近采集</dt>
           <dd className="mt-1 text-zinc-800 dark:text-zinc-200">{source.lastFetchedAt ? formatDateTime(source.lastFetchedAt) : "无"}</dd>
         </div>
       </dl>
 
-      {source.lastError ? <p className="rounded-md bg-red-50 p-2 text-xs text-red-700 dark:bg-red-950 dark:text-red-300">{source.lastError}</p> : null}
+      {source.lastError ? <p className="break-words rounded-md bg-red-50 p-2 text-xs text-red-700 dark:bg-red-950 dark:text-red-300">{source.lastError}</p> : null}
+      {message ? <p className="break-words rounded-md bg-zinc-100 p-2 text-xs text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">{message}</p> : null}
 
-      <Button variant="outline" size="sm" className="w-full" onClick={() => save()} disabled={saving}>
-        {saving ? "保存中" : "保存设置"}
-      </Button>
+      <div className="grid grid-cols-2 gap-2">
+        <Button variant="outline" size="sm" className="w-full" onClick={() => save()} disabled={saving || ingesting}>
+          {saving ? "保存中" : "保存设置"}
+        </Button>
+        <Button size="sm" className="w-full" onClick={ingest} disabled={saving || ingesting}>
+          {ingesting ? "采集中" : "采集测试"}
+        </Button>
+      </div>
     </section>
   );
 }
@@ -119,13 +142,13 @@ export function SourceCreateForm() {
   }
 
   return (
-    <section className="space-y-3">
+    <section className="min-w-0 space-y-3">
       <Button type="button" className="w-full sm:w-auto" onClick={() => setOpen((current) => !current)}>
         {open ? "收起添加" : "添加数据源"}
       </Button>
 
       {open ? (
-        <form onSubmit={submit} className="grid gap-3 rounded-lg border border-zinc-200 bg-white p-4 md:grid-cols-2 dark:border-zinc-800 dark:bg-zinc-900">
+        <form onSubmit={submit} className="grid min-w-0 gap-3 rounded-lg border border-zinc-200 bg-white p-4 md:grid-cols-2 dark:border-zinc-800 dark:bg-zinc-900">
           <Input name="name" placeholder="名称" required />
           <Select name="type" defaultValue="crawler">
             <option value="crawler">crawler</option>

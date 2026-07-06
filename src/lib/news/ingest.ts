@@ -1,4 +1,4 @@
-import { Prisma, type Article } from "@prisma/client";
+import { Prisma, type Article, type DataSource } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { adapters } from "./adapters";
 import { clusterFingerprint, normalizeUrl, titleSimilarity } from "./normalize";
@@ -13,6 +13,58 @@ export type IngestSummary = {
   articlesSaved: number;
   clustersTouched: number;
 };
+
+async function ingestSources(jobId: string, sources: DataSource[]): Promise<Omit<IngestSummary, "jobId">> {
+  let sourcesChecked = 0;
+  let articlesFound = 0;
+  let articlesSaved = 0;
+  const touchedClusters = new Set<string>();
+
+  for (const source of sources) {
+    sourcesChecked += 1;
+    try {
+      const adapter = adapters[source.type];
+      const candidates = await adapter.fetch(source);
+      articlesFound += candidates.length;
+      for (const candidate of candidates) {
+        try {
+          const article: Article = await saveCandidate(source.id, candidate);
+          articlesSaved += 1;
+          if (article.clusterId) touchedClusters.add(article.clusterId);
+        } catch (error) {
+          console.error(`保存新闻失败 ${candidate.url}`, error);
+        }
+      }
+      await prisma.dataSource.update({
+        where: { id: source.id },
+        data: { lastFetchedAt: new Date(), lastStatus: "success", lastError: null },
+      });
+    } catch (error) {
+      await prisma.dataSource.update({
+        where: { id: source.id },
+        data: {
+          lastFetchedAt: new Date(),
+          lastStatus: "failed",
+          lastError: error instanceof Error ? error.message : String(error),
+        },
+      });
+    }
+  }
+
+  await prisma.ingestJob.update({
+    where: { id: jobId },
+    data: {
+      status: "success",
+      finishedAt: new Date(),
+      sourcesChecked,
+      articlesFound,
+      articlesSaved,
+      clustersTouched: touchedClusters.size,
+    },
+  });
+
+  return { sourcesChecked, articlesFound, articlesSaved, clustersTouched: touchedClusters.size };
+}
 
 async function findCluster(category: string, title: string) {
   const recent = await prisma.newsCluster.findMany({
@@ -122,71 +174,20 @@ export async function ingestNews(): Promise<IngestSummary> {
   }
 
   const job = await prisma.ingestJob.create({ data: { status: "running" } });
-  let sourcesChecked = 0;
-  let articlesFound = 0;
-  let articlesSaved = 0;
-  const touchedClusters = new Set<string>();
 
   try {
     const sources = await prisma.dataSource.findMany({
       where: { enabled: true },
       orderBy: { priority: "asc" },
     });
-
-    for (const source of sources) {
-      sourcesChecked += 1;
-      try {
-        const adapter = adapters[source.type];
-        const candidates = await adapter.fetch(source);
-        articlesFound += candidates.length;
-        for (const candidate of candidates) {
-          try {
-            const article: Article = await saveCandidate(source.id, candidate);
-            articlesSaved += 1;
-            if (article.clusterId) touchedClusters.add(article.clusterId);
-          } catch (error) {
-            console.error(`保存新闻失败 ${candidate.url}`, error);
-          }
-        }
-        await prisma.dataSource.update({
-          where: { id: source.id },
-          data: { lastFetchedAt: new Date(), lastStatus: "success", lastError: null },
-        });
-      } catch (error) {
-        await prisma.dataSource.update({
-          where: { id: source.id },
-          data: {
-            lastFetchedAt: new Date(),
-            lastStatus: "failed",
-            lastError: error instanceof Error ? error.message : String(error),
-          },
-        });
-      }
-    }
-
-    await prisma.ingestJob.update({
-      where: { id: job.id },
-      data: {
-        status: "success",
-        finishedAt: new Date(),
-        sourcesChecked,
-        articlesFound,
-        articlesSaved,
-        clustersTouched: touchedClusters.size,
-      },
-    });
-
-    return { jobId: job.id, sourcesChecked, articlesFound, articlesSaved, clustersTouched: touchedClusters.size };
+    const summary = await ingestSources(job.id, sources);
+    return { jobId: job.id, ...summary };
   } catch (error) {
     await prisma.ingestJob.update({
       where: { id: job.id },
       data: {
         status: "failed",
         finishedAt: new Date(),
-        sourcesChecked,
-        articlesFound,
-        articlesSaved,
-        clustersTouched: touchedClusters.size,
         error: error instanceof Error ? error.message : String(error),
       },
     });
@@ -194,3 +195,35 @@ export async function ingestNews(): Promise<IngestSummary> {
   }
 }
 
+export async function ingestSingleSource(sourceId: string): Promise<IngestSummary> {
+  const existingRunning = await prisma.ingestJob.findFirst({
+    where: {
+      status: "running",
+      startedAt: { gte: new Date(Date.now() - 20 * 60 * 1000) },
+    },
+  });
+  if (existingRunning) {
+    throw new Error(`采集任务正在运行：${existingRunning.id}`);
+  }
+
+  const source = await prisma.dataSource.findUnique({ where: { id: sourceId } });
+  if (!source) {
+    throw new Error("数据源不存在");
+  }
+
+  const job = await prisma.ingestJob.create({ data: { status: "running" } });
+  try {
+    const summary = await ingestSources(job.id, [source]);
+    return { jobId: job.id, ...summary };
+  } catch (error) {
+    await prisma.ingestJob.update({
+      where: { id: job.id },
+      data: {
+        status: "failed",
+        finishedAt: new Date(),
+        error: error instanceof Error ? error.message : String(error),
+      },
+    });
+    throw error;
+  }
+}
