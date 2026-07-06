@@ -1,65 +1,114 @@
-import Image from "next/image";
+import Link from "next/link";
+import { Search } from "lucide-react";
+import { BottomNav } from "@/components/site/bottom-nav";
+import { NewsCard } from "@/components/site/news-card";
+import { NewsFeedFilter } from "@/components/site/news-feed-filter";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { NEWS_CATEGORIES, DEFAULT_PAGE_SIZE } from "@/lib/constants";
+import { prisma } from "@/lib/db";
+import { clampPage } from "@/lib/utils";
 
-export default function Home() {
+export const dynamic = "force-dynamic";
+
+type HomeProps = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export default async function Home({ searchParams }: HomeProps) {
+  const params = await searchParams;
+  const q = Array.isArray(params.q) ? params.q[0] : params.q;
+  const category = Array.isArray(params.category) ? params.category[0] : params.category;
+  const page = clampPage(params.page);
+  const where = {
+    canonicalFor: { isNot: null },
+    ...(category && NEWS_CATEGORIES.includes(category as never) ? { category } : {}),
+    ...(q
+      ? {
+          OR: [
+            { titleZh: { contains: q, mode: "insensitive" as const } },
+            { summaryZh: { contains: q, mode: "insensitive" as const } },
+            { sourceName: { contains: q, mode: "insensitive" as const } },
+          ],
+        }
+      : {}),
+  };
+
+  const [articles, total] = await Promise.all([
+    prisma.article.findMany({
+      where,
+      include: { source: true, cluster: true },
+      orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
+      take: DEFAULT_PAGE_SIZE,
+      skip: (page - 1) * DEFAULT_PAGE_SIZE,
+    }),
+    prisma.article.count({ where }),
+  ]);
+  const pageCount = Math.max(1, Math.ceil(total / DEFAULT_PAGE_SIZE));
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <main className="min-h-screen bg-zinc-50 pb-24">
+      <div className="mx-auto max-w-5xl px-4 py-5 sm:px-6 md:py-8">
+        <header className="mb-5 space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-medium text-zinc-500">聚合新闻</p>
+              <h1 className="mt-1 text-3xl font-semibold tracking-normal text-zinc-950">今日要闻</h1>
+            </div>
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/admin/news">后台</Link>
+            </Button>
+          </div>
+          <form className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-400" />
+              <Input name="q" defaultValue={q} className="pl-9" placeholder="搜索新闻、来源或关键词" />
+            </div>
+            {category ? <input type="hidden" name="category" value={category} /> : null}
+            <Button type="submit">搜索</Button>
+          </form>
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            <Button variant={!category ? "default" : "outline"} size="sm" asChild>
+              <Link href={q ? `/?q=${encodeURIComponent(q)}` : "/"}>全部</Link>
+            </Button>
+            {NEWS_CATEGORIES.map((item) => (
+              <Button key={item} variant={category === item ? "default" : "outline"} size="sm" asChild>
+                <Link href={`/?category=${encodeURIComponent(item)}${q ? `&q=${encodeURIComponent(q)}` : ""}`}>{item}</Link>
+              </Button>
+            ))}
+          </div>
+        </header>
+
+        {articles.length ? (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {articles.map((article) => (
+              <NewsFeedFilter key={article.id} category={article.category}>
+                <NewsCard article={article} />
+              </NewsFeedFilter>
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-lg border border-dashed border-zinc-300 bg-white p-8 text-center text-zinc-500">
+            暂无新闻。请先在后台配置数据源并运行采集任务。
+          </div>
+        )}
+
+        <div className="mt-6 flex items-center justify-between text-sm text-zinc-500">
+          <span>
+            第 {page} / {pageCount} 页，共 {total} 条
+          </span>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" disabled={page <= 1} asChild>
+              <Link href={`/?page=${page - 1}`}>上一页</Link>
+            </Button>
+            <Button variant="outline" size="sm" disabled={page >= pageCount} asChild>
+              <Link href={`/?page=${page + 1}`}>下一页</Link>
+            </Button>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+      </div>
+      <BottomNav />
+    </main>
   );
 }
+

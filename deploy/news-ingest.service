@@ -1,0 +1,10 @@
+[Unit]
+Description=News Aggregator ingestion
+After=network.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/news-aggregator
+EnvironmentFile=/opt/news-aggregator/.env
+ExecStart=/usr/bin/npm run ingest:news
+

@@ -1,0 +1,10 @@
+[Unit]
+Description=Run news ingestion hourly
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=1h
+Unit=news-ingest.service
+
+[Install]
+WantedBy=timers.target
