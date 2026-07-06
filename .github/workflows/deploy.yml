@@ -1,0 +1,73 @@
+name: Deploy news aggregator
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: news-aggregator-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    env:
+      APP_DIR: /var/www/news.dogeow.com
+      PORT: "3008"
+      PM2_HOME: /var/www/.pm2
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Verify runtime
+        run: |
+          set -euo pipefail
+          node -v
+          npm -v
+          test -f "$APP_DIR/shared/.env"
+
+      - name: Create release
+        run: |
+          set -euo pipefail
+          RELEASE="$APP_DIR/releases/${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          mkdir -p "$APP_DIR/releases" "$APP_DIR/shared" "$APP_DIR/shared/.next-cache"
+          rsync -a --delete \
+            --exclude='.git' \
+            --exclude='node_modules' \
+            --exclude='.next' \
+            ./ "$RELEASE/"
+          ln -sfn "$APP_DIR/shared/.env" "$RELEASE/.env"
+          ln -sfn "$APP_DIR/shared/.next-cache" "$RELEASE/.next-cache"
+          echo "RELEASE=$RELEASE" >> "$GITHUB_ENV"
+
+      - name: Install, migrate and build
+        working-directory: ${{ env.RELEASE }}
+        run: |
+          set -euo pipefail
+          npm ci
+          npm run lint
+          npm run test
+          npm run prisma:generate
+          npm run prisma:migrate
+          npm run prisma:seed
+          npm run build
+
+      - name: Activate release and reload PM2
+        run: |
+          set -euo pipefail
+          ln -sfn "$RELEASE" "$APP_DIR/current"
+          cd "$APP_DIR/current"
+          if pm2 describe news-aggregator >/dev/null 2>&1; then
+            pm2 delete news-aggregator
+          fi
+          pm2 start npm --name news-aggregator -- run start -- --hostname 127.0.0.1 --port "$PORT"
+          pm2 save
+          find "$APP_DIR/releases" -mindepth 1 -maxdepth 1 -type d | sort -r | tail -n +6 | xargs -r rm -rf
+
+      - name: Smoke test
+        run: |
+          set -euo pipefail
+          curl -fsS "http://127.0.0.1:$PORT/" >/dev/null
+          curl -fsS "http://127.0.0.1:$PORT/api/news" >/dev/null
