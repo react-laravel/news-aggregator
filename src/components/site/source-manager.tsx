@@ -62,9 +62,10 @@ export function SourceCreateForm() {
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const formElement = event.currentTarget;
     setSaving(true);
     setMessage("");
-    const form = new FormData(event.currentTarget);
+    const form = new FormData(formElement);
     const categoryKeys = String(form.get("categoryKeys") || "")
       .split(",")
       .map((item) => item.trim())
@@ -83,10 +84,11 @@ export function SourceCreateForm() {
     });
     setSaving(false);
     if (!response.ok) {
-      setMessage("创建失败，请检查字段和后台 token");
+      const data = (await response.json().catch(() => ({}))) as { error?: string };
+      setMessage(data.error || "创建失败，请检查字段和后台 token");
       return;
     }
-    event.currentTarget.reset();
+    formElement.reset();
     router.refresh();
   }
 

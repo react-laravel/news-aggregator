@@ -22,7 +22,11 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   if (!(await isAdminRequest(request))) return unauthorized();
-  const parsed = createSchema.parse(await request.json());
+  const parsedResult = createSchema.safeParse(await request.json());
+  if (!parsedResult.success) {
+    return NextResponse.json({ error: z.prettifyError(parsedResult.error) }, { status: 400 });
+  }
+  const parsed = parsedResult.data;
   const source = await prisma.dataSource.create({
     data: {
       ...parsed,
@@ -31,4 +35,3 @@ export async function POST(request: NextRequest) {
   });
   return NextResponse.json({ source }, { status: 201 });
 }
-
