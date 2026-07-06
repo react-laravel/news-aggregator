@@ -24,7 +24,7 @@ export default async function AdminJobsPage() {
           </div>
           <JobRunner />
         </div>
-        <div className="overflow-x-auto rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="overflow-x-auto rounded-lg bg-white shadow-sm dark:border dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-none">
           <Table>
             <thead>
               <tr>

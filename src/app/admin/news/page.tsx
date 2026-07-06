@@ -57,7 +57,7 @@ export default async function AdminNewsPage({ searchParams }: { searchParams: Pr
     <main className="min-h-screen overflow-x-hidden bg-zinc-50 dark:bg-zinc-950">
       <AdminNav />
       <div className="mx-auto w-full max-w-6xl space-y-4 px-4 py-5">
-        <form className="grid gap-2 rounded-lg border border-zinc-200 bg-white p-3 md:grid-cols-[1fr_160px_180px_auto] dark:border-zinc-800 dark:bg-zinc-900">
+        <form className="grid gap-2 rounded-lg bg-white p-3 shadow-sm md:grid-cols-[1fr_160px_180px_auto] dark:border dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-none">
           <Input name="q" defaultValue={q} placeholder="搜索标题、摘要、来源" />
           <Select name="category" defaultValue={category ?? ""}>
             <option value="">全部分类</option>
@@ -80,7 +80,7 @@ export default async function AdminNewsPage({ searchParams }: { searchParams: Pr
 
         <div className="grid min-w-0 gap-3 lg:grid-cols-2">
           {articles.map((article) => (
-            <article key={article.id} className="min-w-0 space-y-3 rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+            <article key={article.id} className="min-w-0 space-y-3 rounded-lg bg-white p-4 shadow-sm dark:border dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-none">
               <div className="flex items-start justify-between gap-3">
                 <Badge>{article.category}</Badge>
                 {article.canonicalFor ? <Badge>展示中</Badge> : <span className="shrink-0 text-xs text-zinc-400 dark:text-zinc-500">聚合隐藏</span>}
