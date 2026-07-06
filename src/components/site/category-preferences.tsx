@@ -7,22 +7,39 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const STORAGE_KEY = "news_subscribed_categories";
+const DEFAULT_CATEGORIES: string[] = [...NEWS_CATEGORIES];
+
+let cachedRaw: string | null | undefined;
+let cachedCategories: string[] = DEFAULT_CATEGORIES;
 
 export function getStoredCategories() {
-  if (typeof window === "undefined") return [...NEWS_CATEGORIES];
+  if (typeof window === "undefined") return DEFAULT_CATEGORIES;
   const raw = window.localStorage.getItem(STORAGE_KEY);
-  if (!raw) return [...NEWS_CATEGORIES];
+  if (raw === cachedRaw) return cachedCategories;
+
+  cachedRaw = raw;
+  if (!raw) {
+    cachedCategories = DEFAULT_CATEGORIES;
+    return cachedCategories;
+  }
+
   try {
     const parsed = JSON.parse(raw) as string[];
     const valid = parsed.filter((item) => NEWS_CATEGORIES.includes(item as never));
-    return valid.length ? valid : [...NEWS_CATEGORIES];
+    cachedCategories = valid.length ? valid : DEFAULT_CATEGORIES;
   } catch {
-    return [...NEWS_CATEGORIES];
+    cachedCategories = DEFAULT_CATEGORIES;
   }
+  return cachedCategories;
 }
 
 export function setStoredCategories(categories: string[]) {
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(categories));
+  const valid = categories.filter((item) => NEWS_CATEGORIES.includes(item as never));
+  const next = valid.length ? valid : DEFAULT_CATEGORIES;
+  const raw = JSON.stringify(next);
+  cachedRaw = raw;
+  cachedCategories = next;
+  window.localStorage.setItem(STORAGE_KEY, raw);
   window.dispatchEvent(new CustomEvent("news-categories-changed"));
 }
 
@@ -36,7 +53,7 @@ export function subscribeToCategoryChanges(callback: () => void) {
 }
 
 export function CategoryPreferences() {
-  const selected = useSyncExternalStore(subscribeToCategoryChanges, getStoredCategories, () => [...NEWS_CATEGORIES]);
+  const selected = useSyncExternalStore(subscribeToCategoryChanges, getStoredCategories, () => DEFAULT_CATEGORIES);
   const allSelected = selected.length === NEWS_CATEGORIES.length;
 
   const summary = useMemo(() => (allSelected ? "全部分类" : selected.join("、")), [allSelected, selected]);
@@ -48,7 +65,7 @@ export function CategoryPreferences() {
           <h1 className="text-2xl font-semibold tracking-normal text-zinc-950">订阅新闻类型</h1>
           <p className="mt-1 text-sm text-zinc-500">当前：{summary}</p>
         </div>
-        <Button variant="outline" size="sm" onClick={() => setStoredCategories([...NEWS_CATEGORIES])}>
+        <Button variant="outline" size="sm" onClick={() => setStoredCategories(DEFAULT_CATEGORIES)}>
           全选
         </Button>
       </div>
