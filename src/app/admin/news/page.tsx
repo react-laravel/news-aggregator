@@ -26,7 +26,6 @@ export default async function AdminNewsPage({ searchParams }: { searchParams: Pr
       ? {
           OR: [
             { titleZh: { contains: q, mode: "insensitive" as const } },
-            { summaryZh: { contains: q, mode: "insensitive" as const } },
             { sourceName: { contains: q, mode: "insensitive" as const } },
           ],
         }
@@ -58,7 +57,7 @@ export default async function AdminNewsPage({ searchParams }: { searchParams: Pr
       <AdminNav />
       <div className="mx-auto w-full max-w-6xl space-y-4 px-4 py-5">
         <form className="grid gap-2 rounded-lg bg-white p-3 shadow-sm md:grid-cols-[1fr_160px_180px_auto] dark:border dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-none">
-          <Input name="q" defaultValue={q} placeholder="搜索标题、摘要、来源" />
+          <Input name="q" defaultValue={q} placeholder="搜索标题、来源" />
           <Select name="category" defaultValue={category ?? ""}>
             <option value="">全部分类</option>
             {NEWS_CATEGORIES.map((item) => (
@@ -85,11 +84,10 @@ export default async function AdminNewsPage({ searchParams }: { searchParams: Pr
                 <Badge>{article.category}</Badge>
                 {article.canonicalFor ? <Badge>展示中</Badge> : <span className="shrink-0 text-xs text-zinc-400 dark:text-zinc-500">聚合隐藏</span>}
               </div>
-              <div className="min-w-0 space-y-2">
-                <Link href={`/news/${article.id}`} className="block text-base font-semibold leading-snug text-zinc-950 hover:underline dark:text-zinc-50">
+              <div className="min-w-0">
+                <a href={article.url} target="_blank" rel="noreferrer" className="block text-base font-semibold leading-snug text-zinc-950 hover:underline dark:text-zinc-50">
                   {article.titleZh}
-                </Link>
-                <p className="line-clamp-3 text-sm leading-6 text-zinc-600 dark:text-zinc-300">{article.summaryZh || article.summaryOriginal || "暂无摘要"}</p>
+                </a>
               </div>
               <dl className="grid grid-cols-2 gap-3 text-sm">
                 <div className="min-w-0">

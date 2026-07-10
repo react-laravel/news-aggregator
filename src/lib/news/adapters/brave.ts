@@ -1,7 +1,7 @@
 import type { DataSource } from "@prisma/client";
 import { ProxyAgent, setGlobalDispatcher } from "undici";
 import { NEWS_CATEGORIES } from "@/lib/constants";
-import { categoryFromText } from "../normalize";
+import { categoryFromText, normalizeTitle } from "../normalize";
 import type { CandidateArticle, NewsAdapter } from "../types";
 
 
@@ -26,8 +26,9 @@ type BraveNewsResponse = {
     description?: string;
     age?: string;
     page_age?: string;
-    source?: string;
-    thumbnail?: { src?: string };
+    meta_url?: {
+      hostname?: string;
+    };
   }>;
 };
 
@@ -38,6 +39,7 @@ export const braveNewsAdapter: NewsAdapter = {
     if (!apiKey) return [];
     const categories = source.categoryKeys.length ? source.categoryKeys : [...NEWS_CATEGORIES];
     const articles: CandidateArticle[] = [];
+    const seenResults = new Set<string>();
 
     for (const category of categories) {
       const query = source.query || `${category} 新闻`;
@@ -66,13 +68,17 @@ export const braveNewsAdapter: NewsAdapter = {
       await sleep(1200);
       for (const result of data.results ?? []) {
         if (!result.url || !result.title) continue;
+        const hostname = result.meta_url?.hostname || new URL(result.url).hostname.replace(/^www\./, "");
+        const resultKey = `${hostname}:${normalizeTitle(result.title)}`;
+        if (seenResults.has(resultKey)) continue;
+        seenResults.add(resultKey);
+
         articles.push({
           url: result.url,
-          sourceName: result.source || source.name,
+          sourceName: hostname || source.name,
           titleOriginal: result.title,
           summaryOriginal: result.description,
-          category: categoryFromText(`${result.title} ${result.description ?? ""}`, category),
-          imageUrl: result.thumbnail?.src,
+          category: categoryFromText(result.title, category),
           publishedAt: result.page_age ? new Date(result.page_age) : null,
           raw: result,
         });
@@ -82,4 +88,3 @@ export const braveNewsAdapter: NewsAdapter = {
     return articles;
   },
 };
-

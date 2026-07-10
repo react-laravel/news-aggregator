@@ -16,7 +16,6 @@ export async function GET(request: NextRequest) {
       ? {
           OR: [
             { titleZh: { contains: q, mode: "insensitive" as const } },
-            { summaryZh: { contains: q, mode: "insensitive" as const } },
             { sourceName: { contains: q, mode: "insensitive" as const } },
           ],
         }
@@ -35,4 +34,3 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.json({ articles, total, page });
 }
-

@@ -9,7 +9,6 @@ type GoogleSearchResponse = {
     link?: string;
     snippet?: string;
     pagemap?: {
-      cse_image?: Array<{ src?: string }>;
       metatags?: Array<{ ["article:published_time"]?: string; ["og:site_name"]?: string }>;
     };
   }>;
@@ -42,8 +41,7 @@ export const googleCseAdapter: NewsAdapter = {
           sourceName: meta?.["og:site_name"] || source.name,
           titleOriginal: item.title,
           summaryOriginal: item.snippet,
-          category: categoryFromText(`${item.title} ${item.snippet ?? ""}`, category),
-          imageUrl: item.pagemap?.cse_image?.[0]?.src,
+          category: categoryFromText(item.title, category),
           publishedAt: meta?.["article:published_time"] ? new Date(meta["article:published_time"]) : null,
           raw: item,
         });
@@ -52,4 +50,3 @@ export const googleCseAdapter: NewsAdapter = {
     return articles;
   },
 };
-

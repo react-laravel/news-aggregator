@@ -68,7 +68,6 @@ model Article {
   summaryZh        String?
   language         String      @default("zh")
   category         String
-  imageUrl         String?
   publishedAt      DateTime?
   qualityScore     Int         @default(0)
   raw              Json?

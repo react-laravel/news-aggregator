@@ -113,9 +113,6 @@ async function saveCandidate(sourceId: string, candidate: CandidateArticle) {
   const category = candidate.category || "国内";
   const cluster = await findCluster(category, translated.titleZh || candidate.titleOriginal);
   const score = qualityScore({
-    summaryOriginal: candidate.summaryOriginal,
-    summaryZh: translated.summaryZh,
-    imageUrl: candidate.imageUrl,
     publishedAt: candidate.publishedAt,
   });
 
@@ -134,7 +131,6 @@ async function saveCandidate(sourceId: string, candidate: CandidateArticle) {
       summaryZh: translated.summaryZh,
       language: translated.language,
       category,
-      imageUrl: candidate.imageUrl,
       publishedAt: candidate.publishedAt,
       qualityScore: score,
       raw: candidate.raw === undefined ? Prisma.JsonNull : (candidate.raw as Prisma.InputJsonValue),
@@ -151,7 +147,6 @@ async function saveCandidate(sourceId: string, candidate: CandidateArticle) {
       summaryZh: translated.summaryZh,
       language: translated.language,
       category,
-      imageUrl: candidate.imageUrl,
       publishedAt: candidate.publishedAt,
       qualityScore: score,
       raw: candidate.raw === undefined ? Prisma.JsonNull : (candidate.raw as Prisma.InputJsonValue),

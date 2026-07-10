@@ -7,7 +7,6 @@ export type CandidateArticle = {
   summaryOriginal?: string | null;
   language?: string;
   category: string;
-  imageUrl?: string | null;
   publishedAt?: Date | null;
   raw?: unknown;
 };
@@ -15,4 +14,3 @@ export type CandidateArticle = {
 export type NewsAdapter = {
   fetch(source: DataSource): Promise<CandidateArticle[]>;
 };
-

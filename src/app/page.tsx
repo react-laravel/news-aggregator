@@ -28,7 +28,6 @@ export default async function Home({ searchParams }: HomeProps) {
       ? {
           OR: [
             { titleZh: { contains: q, mode: "insensitive" as const } },
-            { summaryZh: { contains: q, mode: "insensitive" as const } },
             { sourceName: { contains: q, mode: "insensitive" as const } },
           ],
         }
