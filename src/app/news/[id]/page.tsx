@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { BottomNav } from "@/components/site/bottom-nav";
+import { NewsImage } from "@/components/site/news-image";
 import { prisma } from "@/lib/db";
 import { formatDateTime } from "@/lib/utils";
 
@@ -42,8 +43,7 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ id:
 
         <article className="mt-4 space-y-5">
           {article.imageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={article.imageUrl} alt="" className="aspect-video w-full rounded-lg object-cover" />
+            <NewsImage src={article.imageUrl} sizes="(max-width: 768px) 100vw, 768px" className="aspect-video w-full rounded-lg" />
           ) : null}
           <div className="space-y-3">
             <div className="flex flex-wrap items-center gap-2">
