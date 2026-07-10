@@ -1,7 +1,6 @@
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
-
-export const ADMIN_COOKIE = "news_admin_token";
+import { ADMIN_COOKIE } from "@/lib/admin-constants";
 
 export async function isAdminRequest(request?: NextRequest) {
   const expected = process.env.ADMIN_TOKEN;

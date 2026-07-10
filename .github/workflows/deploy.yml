@@ -70,8 +70,14 @@ jobs:
       - name: Smoke test
         run: |
           set -euo pipefail
-          curl --noproxy "*" -fsS "http://127.0.0.1:$PORT/" >/dev/null
-          curl --noproxy "*" -fsS "http://127.0.0.1:$PORT/api/news" >/dev/null
+          HOME_STATUS=$(curl --noproxy "*" -sS -o /dev/null -w "%{http_code}" "http://127.0.0.1:$PORT/")
+          API_STATUS=$(curl --noproxy "*" -sS -o /dev/null -w "%{http_code}" "http://127.0.0.1:$PORT/api/news")
+          test "$HOME_STATUS" = "307"
+          test "$API_STATUS" = "401"
+          ADMIN_TOKEN_VALUE=$(node -e "const fs=require('fs'); const env=fs.readFileSync(process.env.APP_DIR + '/shared/.env', 'utf8'); for (const line of env.split(/\\r?\\n/)) { const m=line.match(/^ADMIN_TOKEN=(.*)$/); if (m) { process.stdout.write(m[1].trim().replace(/^\\"|\\"$/g, '').replace(/^\\'|\\'$/g, '')); break; } }")
+          test -n "$ADMIN_TOKEN_VALUE"
+          curl --noproxy "*" -fsS -H "x-admin-token: $ADMIN_TOKEN_VALUE" "http://127.0.0.1:$PORT/" >/dev/null
+          curl --noproxy "*" -fsS -H "x-admin-token: $ADMIN_TOKEN_VALUE" "http://127.0.0.1:$PORT/api/news" >/dev/null
 
       - name: Notify dogeow deployment
         if: success()
