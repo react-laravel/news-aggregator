@@ -1,0 +1,98 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum SourceType {
+  crawler
+  brave_news
+  google_cse
+  openai_web_search
+}
+
+enum JobStatus {
+  running
+  success
+  failed
+}
+
+model DataSource {
+  id             String    @id @default(cuid())
+  name           String
+  type           SourceType
+  enabled        Boolean   @default(true)
+  priority       Int       @default(100)
+  baseUrl        String?
+  query          String?
+  categoryKeys   String[]  @default([])
+  lastFetchedAt  DateTime?
+  lastStatus     String?
+  lastError      String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  articles       Article[]
+
+  @@index([enabled, priority])
+}
+
+model NewsCluster {
+  id                 String    @id @default(cuid())
+  fingerprint        String    @unique
+  title              String
+  category           String
+  canonicalArticleId String?   @unique
+  canonicalArticle   Article?  @relation("CanonicalArticle", fields: [canonicalArticleId], references: [id], onDelete: SetNull)
+  articles           Article[] @relation("ClusterArticles")
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@index([category, updatedAt])
+}
+
+model Article {
+  id               String       @id @default(cuid())
+  sourceId         String
+  source           DataSource   @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  clusterId        String?
+  cluster          NewsCluster? @relation("ClusterArticles", fields: [clusterId], references: [id], onDelete: SetNull)
+  canonicalFor     NewsCluster? @relation("CanonicalArticle")
+  url              String
+  normalizedUrl    String
+  sourceName       String
+  titleOriginal    String
+  titleZh          String
+  summaryOriginal  String?
+  summaryZh        String?
+  language         String      @default("zh")
+  category         String
+  publishedAt      DateTime?
+  qualityScore     Int         @default(0)
+  raw              Json?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  @@unique([sourceId, normalizedUrl])
+  @@index([category, publishedAt])
+  @@index([normalizedUrl])
+  @@index([clusterId])
+  @@index([createdAt])
+}
+
+model IngestJob {
+  id             String    @id @default(cuid())
+  status         JobStatus @default(running)
+  startedAt      DateTime  @default(now())
+  finishedAt     DateTime?
+  sourcesChecked Int       @default(0)
+  articlesFound  Int       @default(0)
+  articlesSaved  Int       @default(0)
+  clustersTouched Int      @default(0)
+  error          String?
+  createdAt      DateTime  @default(now())
+
+  @@index([startedAt])
+  @@index([status])
+}
