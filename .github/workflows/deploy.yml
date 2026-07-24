@@ -74,7 +74,16 @@ jobs:
           API_STATUS=$(curl --noproxy "*" -sS -o /dev/null -w "%{http_code}" "http://127.0.0.1:$PORT/api/news")
           test "$HOME_STATUS" = "307"
           test "$API_STATUS" = "401"
-          ADMIN_TOKEN_VALUE=$(node -e "const fs=require('fs'); const env=fs.readFileSync(process.env.APP_DIR + '/shared/.env', 'utf8'); for (const line of env.split(/\\r?\\n/)) { const m=line.match(/^ADMIN_TOKEN=(.*)$/); if (m) { process.stdout.write(m[1].trim().replace(/^\\"|\\"$/g, '').replace(/^\\'|\\'$/g, '')); break; } }")
+          ADMIN_TOKEN_VALUE="$(python3 - <<'PY'
+          from pathlib import Path
+          import os
+
+          for line in (Path(os.environ["APP_DIR"]) / "shared/.env").read_text().splitlines():
+              if line.startswith("ADMIN_TOKEN="):
+                  print(line.partition("=")[2].strip().strip("\"'"), end="")
+                  break
+          PY
+          )"
           test -n "$ADMIN_TOKEN_VALUE"
           curl --noproxy "*" -fsS -H "x-admin-token: $ADMIN_TOKEN_VALUE" "http://127.0.0.1:$PORT/" >/dev/null
           curl --noproxy "*" -fsS -H "x-admin-token: $ADMIN_TOKEN_VALUE" "http://127.0.0.1:$PORT/api/news" >/dev/null
