@@ -1,4 +1,5 @@
 import { detectLanguage } from "./normalize";
+import { getResponseOutputText } from "@/lib/openai-response";
 
 type TranslationResult = {
   titleZh: string;
@@ -54,8 +55,8 @@ export async function translateIfNeeded(title: string, summary?: string | null):
     });
 
     if (!response.ok) throw new Error(`OpenAI translation failed: ${response.status}`);
-    const data = (await response.json()) as { output_text?: string };
-    const parsed = JSON.parse(data.output_text ?? "{}") as Partial<TranslationResult>;
+    const data = await response.json();
+    const parsed = JSON.parse(getResponseOutputText(data) || "{}") as Partial<TranslationResult>;
     return {
       titleZh: parsed.titleZh || title,
       summaryZh: parsed.summaryZh || summary,

@@ -1,5 +1,6 @@
 import type { DataSource } from "@prisma/client";
 import { NEWS_CATEGORIES } from "@/lib/constants";
+import { getResponseOutputText } from "@/lib/openai-response";
 import type { NewsAdapter } from "../types";
 
 type OpenAINewsResult = {
@@ -58,8 +59,8 @@ export const openaiWebSearchAdapter: NewsAdapter = {
     });
 
     if (!response.ok) throw new Error(`OpenAI web search failed: ${response.status}`);
-    const data = (await response.json()) as { output_text?: string };
-    const parsed = JSON.parse(data.output_text ?? "{\"items\":[]}") as { items?: OpenAINewsResult[] };
+    const data = await response.json();
+    const parsed = JSON.parse(getResponseOutputText(data) || "{\"items\":[]}") as { items?: OpenAINewsResult[] };
 
     return (parsed.items ?? [])
       .filter((item) => item.url && item.title)

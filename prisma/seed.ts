@@ -9,6 +9,7 @@ const categories = ["国内", "国际", "财经", "科技", "AI", "体育", "娱
 
 async function main() {
   const sources: Array<{
+    id: string;
     name: string;
     type: SourceType;
     priority: number;
@@ -17,6 +18,7 @@ async function main() {
     categoryKeys: string[];
   }> = [
     {
+      id: "Brave 新闻搜索",
       name: "Brave 新闻搜索",
       type: "brave_news",
       priority: 10,
@@ -24,6 +26,7 @@ async function main() {
       categoryKeys: categories,
     },
     {
+      id: "Google 可编程搜索",
       name: "Google 可编程搜索",
       type: "google_cse",
       priority: 30,
@@ -31,6 +34,7 @@ async function main() {
       categoryKeys: categories,
     },
     {
+      id: "OpenAI Web Search",
       name: "OpenAI Web Search",
       type: "openai_web_search",
       priority: 40,
@@ -38,19 +42,21 @@ async function main() {
       categoryKeys: categories,
     },
     {
-      name: "央视新闻 RSS",
+      id: "央视新闻 RSS",
+      name: "中新网即时新闻 RSS",
       type: "crawler",
       priority: 20,
-      baseUrl: "https://news.cctv.com/rss/index.xml",
+      baseUrl: "https://www.chinanews.com.cn/rss/scroll-news.xml",
       categoryKeys: ["国内", "国际"],
     },
   ];
 
   for (const source of sources) {
+    const { id, ...data } = source;
     await prisma.dataSource.upsert({
-      where: { id: source.name },
-      update: source,
-      create: { id: source.name, ...source },
+      where: { id },
+      update: data,
+      create: { id, ...data },
     });
   }
 }
