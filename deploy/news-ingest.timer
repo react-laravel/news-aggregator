@@ -1,9 +1,9 @@
 [Unit]
-Description=Run news ingestion hourly
+Description=Run news ingestion every two hours
 
 [Timer]
 OnBootSec=5min
-OnUnitActiveSec=1h
+OnUnitActiveSec=2h
 Unit=news-ingest.service
 
 [Install]
