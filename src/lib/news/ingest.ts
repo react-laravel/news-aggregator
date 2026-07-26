@@ -153,6 +153,13 @@ async function saveCandidate(sourceId: string, candidate: CandidateArticle) {
     },
   });
 
+  await prisma.newsCluster.updateMany({
+    where: {
+      canonicalArticleId: article.id,
+      id: { not: cluster.id },
+    },
+    data: { canonicalArticleId: null },
+  });
   await refreshCanonical(cluster.id);
   return article;
 }
