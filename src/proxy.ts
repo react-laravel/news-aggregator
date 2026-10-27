@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ADMIN_COOKIE } from "@/lib/admin-constants";
 
-const ALLOWED_PATHS = new Set(["/admin/login", "/api/admin/session"]);
+const ALLOWED_PATHS = new Set(["/admin/login", "/api/admin/session", "/healthz"]);
 
 function hasAdminToken(request: NextRequest) {
   const expected = process.env.ADMIN_TOKEN;

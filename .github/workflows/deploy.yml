@@ -1,102 +1,64 @@
-name: Deploy news aggregator
-
+name: News hosted CI and B deployment
 on:
   push:
     branches: [main]
+  pull_request:
   workflow_dispatch:
-
+    inputs:
+      publish:
+        description: Publish the tested main revision to B
+        type: boolean
+        default: false
+permissions:
+  contents: read
 concurrency:
-  group: news-aggregator-deploy
+  group: news-b-${{ github.ref }}
   cancel-in-progress: false
-
 jobs:
-  deploy:
-    runs-on: self-hosted
+  build:
+    runs-on: ubuntu-24.04
     env:
-      APP_DIR: /var/www/news.dogeow.com
-      PORT: "3008"
-      PM2_HOME: /var/www/.pm2
-      NEXT_TELEMETRY_DISABLED: "1"
+      NEXT_TELEMETRY_DISABLED: '1'
+      DATABASE_URL: postgresql://unused:unused@127.0.0.1:1/never_connect
     steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Verify runtime
-        run: |
-          set -euo pipefail
-          node -v
-          npm -v
-          test -f "$APP_DIR/shared/.env"
-
-      - name: Create release
-        run: |
-          set -euo pipefail
-          RELEASE="$APP_DIR/releases/${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          mkdir -p "$APP_DIR/releases" "$APP_DIR/shared" "$APP_DIR/shared/.next-cache"
-          rsync -a --delete \
-            --exclude='.git' \
-            --exclude='node_modules' \
-            --exclude='.next' \
-            ./ "$RELEASE/"
-          ln -sfn "$APP_DIR/shared/.env" "$RELEASE/.env"
-          ln -sfn "$APP_DIR/shared/.next-cache" "$RELEASE/.next-cache"
-          echo "RELEASE=$RELEASE" >> "$GITHUB_ENV"
-
-      - name: Install, migrate and build
-        working-directory: ${{ env.RELEASE }}
-        run: |
-          set -euo pipefail
-          npm ci
-          npm run lint
-          npm run test
-          npm run prisma:generate
-          npm run prisma:migrate
-          npm run prisma:seed
-          npm run build
-
-      - name: Activate release and reload PM2
-        run: |
-          set -euo pipefail
-          ln -sfn "$RELEASE" "$APP_DIR/current"
-          cd "$APP_DIR/current"
-          if pm2 describe news-aggregator >/dev/null 2>&1; then
-            pm2 delete news-aggregator
-          fi
-          pm2 start npm --name news-aggregator -- run start -- --hostname 127.0.0.1 --port "$PORT"
-          pm2 save
-          CURRENT_REAL=$(readlink -f "$APP_DIR/current")
-          find "$APP_DIR/releases" -mindepth 1 -maxdepth 1 -type d ! -path "$CURRENT_REAL" -printf "%T@ %p\n" | sort -rn | cut -d" " -f2- | xargs -r rm -rf
-
-      - name: Smoke test
-        run: |
-          set -euo pipefail
-          HOME_STATUS=$(curl --noproxy "*" -sS -o /dev/null -w "%{http_code}" "http://127.0.0.1:$PORT/")
-          API_STATUS=$(curl --noproxy "*" -sS -o /dev/null -w "%{http_code}" "http://127.0.0.1:$PORT/api/news")
-          test "$HOME_STATUS" = "307"
-          test "$API_STATUS" = "401"
-          ADMIN_TOKEN_VALUE="$(python3 - <<'PY'
-          from pathlib import Path
-          import os
-
-          for line in (Path(os.environ["APP_DIR"]) / "shared/.env").read_text().splitlines():
-              if line.startswith("ADMIN_TOKEN="):
-                  print(line.partition("=")[2].strip().strip("\"'"), end="")
-                  break
-          PY
-          )"
-          test -n "$ADMIN_TOKEN_VALUE"
-          curl --noproxy "*" -fsS -H "x-admin-token: $ADMIN_TOKEN_VALUE" "http://127.0.0.1:$PORT/" >/dev/null
-          curl --noproxy "*" -fsS -H "x-admin-token: $ADMIN_TOKEN_VALUE" "http://127.0.0.1:$PORT/api/news" >/dev/null
-
-      - name: Notify dogeow deployment
-        if: success()
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24.16.0'
+          cache: npm
+      - run: npm ci
+      - run: npm run prisma:generate
+      - run: npm run lint
+      - run: npm test
+      - run: python3 -m unittest discover -s tests -v
+      - run: npm run build
+      - run: node scripts/package-news.mjs "$GITHUB_SHA"
+      - run: python3 scripts/archive-news.py "$GITHUB_SHA"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: news-${{ github.sha }}
+          path: news-runtime.tar.gz
+          retention-days: 3
+          if-no-files-found: error
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.publish))
+    runs-on: ubuntu-24.04
+    environment: news-b
+    concurrency:
+      group: news-b-publish
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: news-${{ github.sha }}
+      - name: Publish only this News runtime
         env:
-          APP_NAME: news-aggregator
-          APP_URL: https://news.dogeow.com
-        run: |
-          set -euo pipefail
-          php /var/www/dogeow-api/current/artisan notify:deploy "$APP_NAME" \
-            --title="部署完成：$APP_NAME" \
-            --body="react-laravel/$APP_NAME 已通过 GitHub self-hosted runner 部署成功（${GITHUB_SHA::7}）" \
-            --url="$APP_URL" \
-            --no-interaction || true
+          NEWS_B_SSH_KEY: ${{ secrets.NEWS_B_SSH_KEY }}
+          NEWS_B_KNOWN_HOSTS: ${{ secrets.NEWS_B_KNOWN_HOSTS }}
+        run: bash scripts/deploy-news-to-b.sh

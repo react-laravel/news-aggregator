@@ -39,3 +39,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Hosted CI runtime staging
+/.news-runtime/
+/news-runtime.tar.gz
+__pycache__/

@@ -1,0 +1,17 @@
+[Unit]
+Description=Root-only durable first News takeover and recovery
+After=network.target postgresql@18-tests.service
+StartLimitIntervalSec=0
+
+[Service]
+Type=exec
+User=root
+Group=root
+ExecStart=/usr/local/libexec/news-first-control --serve
+Restart=always
+RestartSec=2
+KillMode=control-group
+UMask=0022
+
+[Install]
+WantedBy=multi-user.target
